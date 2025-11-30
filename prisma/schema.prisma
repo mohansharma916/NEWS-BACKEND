@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+
+enum Role {
+  SUPER_ADMIN
+  EDITOR
+  USER
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String?
+  avatarUrl String?
+  role      Role     @default(USER)
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  posts       Post[]
+  createdAt   DateTime @default(now())
+}
+
+
+
+model Post {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?
+  content     String     @db.Text // Use Text type for long HTML content
+  coverImage  String?
+  
+  views       Int        @default(0)
+  isTrending  Boolean    @default(false)
+  
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+
+  authorId    String
+  author      User       @relation(fields: [authorId], references: [id])
+  
+  categoryId  String?
+  category    Category?  @relation(fields: [categoryId], references: [id])
+
+  dailyStats DailyStat[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model DailyStat {
+  id        String   @id @default(uuid())
+  date      DateTime // e.g., 2025-11-29 00:00:00
+  views     Int      @default(0)
+
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+
+  // Unique constraint ensures we only have ONE row per post per day
+  @@unique([date, postId]) 
+}
