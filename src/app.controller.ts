@@ -9,4 +9,10 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+  
+  @Get('health')
+  healthCheck() {
+    // Simple return string. No DB calls. No heavy logic.
+    return "OK";
+  }
 }
