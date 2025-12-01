@@ -13,9 +13,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
-
-
 enum Role {
   SUPER_ADMIN
   EDITOR
@@ -93,4 +90,13 @@ model DailyStat {
 
   // Unique constraint ensures we only have ONE row per post per day
   @@unique([date, postId]) 
+}
+
+model Subscriber {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  isActive     Boolean  @default(true) // True = Subscribed, False = Unsubscribed
+  unsubscribedAt DateTime? // Optional: Track when they opted out
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
