@@ -12,6 +12,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static'; // <--- IMPORT
 import { join } from 'path'; // <--- IMPORT
 import { ThrottlerModule } from '@nestjs/throttler';
+import { SubscribeNewslettersModule } from './subscribe-newsletters/subscribe-newsletters.module';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     CategoriesModule, 
     UsersModule,
     AuthModule, 
-    UploadModule
+    UploadModule, SubscribeNewslettersModule
     ],
   controllers: [AppController],
   providers: [AppService,PrismaService],
