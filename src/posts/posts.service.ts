@@ -44,11 +44,17 @@ export class PostsService {
   async findAllPublished(page: number = 1, limit: number = 10, categorySlug?: string) {
     const skip = (page - 1) * limit;
 
+    console.log("Finding published posts:", { page, limit, categorySlug });
+
+
+
     // Build the query filter
     const whereClause = {
       status: 'PUBLISHED',
-      ...(categorySlug && { category: { slug: categorySlug } }), // Optional filter
+      ...(categorySlug && { category: { slug: { contains: categorySlug,
+      mode: 'insensitive',} } }), // Optional filter
     };
+
 
     // Run count and find in parallel
     const [posts, total] = await this.prisma.$transaction([
@@ -64,7 +70,6 @@ export class PostsService {
       }),
       this.prisma.post.count({ where: whereClause as any }),
     ]);
-
     return {
       data: posts,
       meta: {
