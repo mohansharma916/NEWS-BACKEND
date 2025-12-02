@@ -92,6 +92,18 @@ model DailyStat {
   @@unique([date, postId]) 
 }
 
+
+model GeoStat {
+  id        String   @id @default(uuid())
+  date      DateTime // Normalized to midnight
+  country   String   // ISO Code: "IN", "US", "GB"
+  views     Int      @default(0)
+
+  // Ensure we just increment for the same country on the same day
+  @@unique([date, country])
+}
+
+
 model Subscriber {
   id           String   @id @default(uuid())
   email        String   @unique

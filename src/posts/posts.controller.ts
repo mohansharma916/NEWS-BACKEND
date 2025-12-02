@@ -9,6 +9,7 @@ import { RolesGuard } from 'src/auth/guards/role.guards';
 import { Roles } from 'src/auth/decorators/role.decorators';
 import { Role } from 'generated/prisma/client';
 import { Throttle } from '@nestjs/throttler';
+import { Ip } from '@nestjs/common';
 
 @Controller('posts')
 export class PostsController {
@@ -70,10 +71,19 @@ export class PostsController {
   @Post(':id/view') // Specific action on an ID
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  async view(@Param('id') id: string) {
-    return this.postsService.incrementView(id);
+async view(@Param('id') id: string, @Ip() ip: string, @Req() req: any) {
+
+    const realIp = req.headers['x-forwarded-for'] || ip;
+    return this.postsService.incrementView(id,realIp.toString());
   }
 
+
+  @Get('admin/geo')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.EDITOR)
+  async getGeoStats(@Query('range') range: '24h' | '7d' | '30d' | 'all' = '7d') {
+    return this.postsService.getGeoStats(range);
+  }
   // Catch-all for slugs (Must be last of the GET requests usually)
   @Get(':slug') 
   async findOne(@Param('slug') slug: string) {
