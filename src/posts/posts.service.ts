@@ -3,6 +3,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from 'generated/prisma/client';
+import * as geoip from 'geoip-lite';
 
 @Injectable()
 export class PostsService {
@@ -135,38 +136,76 @@ async findTrending() {
 
  // src/posts/posts.service.ts
 
-  async incrementView(id: string) {
+  async incrementView(id: string,ip: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize to midnight (e.g., 2025-11-29 00:00:00)
 
+
+    const geo = geoip.lookup(ip);
+    const country = geo ? geo.country : 'Unknown';
+
     // Transaction ensures both happen or neither happens
     return this.prisma.$transaction([
-      
-      // 1. Increment Total Views (for "Most Popular" sorting)
+      // A. Post Total
       this.prisma.post.update({
         where: { id },
         data: { views: { increment: 1 } },
       }),
 
-      // 2. Increment "Today's" Stats (for the Trend Chart)
+      // B. Daily Post History
       this.prisma.dailyStat.upsert({
-        where: {
-          date_postId: {
-            date: today,
-            postId: id,
-          },
-        },
-        // If row exists for today, add 1
+        where: { date_postId: { date: today, postId: id } },
         update: { views: { increment: 1 } },
-        // If first view of the day, create row
-        create: {
-          date: today,
-          postId: id,
-          views: 1,
-        },
+        create: { date: today, postId: id, views: 1 },
+      }),
+
+      // C. Daily Geo Stats (NEW)
+      this.prisma.geoStat.upsert({
+        where: { date_country: { date: today, country } },
+        update: { views: { increment: 1 } },
+        create: { date: today, country, views: 1 },
       }),
     ]);
   }
+
+  
+  async getGeoStats(range: '24h' | '7d' | '30d' | 'all') {
+    let dateFilter = {};
+    const now = new Date();
+
+    if (range === '24h') {
+        // Approximate 24h as "today" for daily buckets, or strictly last 24h if you stored timestamps.
+        // For daily buckets, '24h' usually means 'Today'.
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        dateFilter = { gte: today };
+    } else if (range === '7d') {
+        const d = new Date(); d.setDate(d.getDate() - 7); d.setHours(0,0,0,0);
+        dateFilter = { gte: d };
+    } else if (range === '30d') {
+        const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0,0,0,0);
+        dateFilter = { gte: d };
+    }
+
+    // Aggregate by Country
+    const stats = await this.prisma.geoStat.groupBy({
+        by: ['country'],
+        where: { date: dateFilter },
+        _sum: { views: true },
+        orderBy: { _sum: { views: 'desc' } },
+    });
+
+    // Calculate Percentages
+    const totalViews = stats.reduce((acc, curr) => acc + (curr._sum.views || 0), 0);
+    
+    return stats.map(s => ({
+        country: s.country,
+        views: s._sum.views,
+        percent: totalViews > 0 ? Math.round(((s._sum.views || 0) / totalViews) * 100) : 0
+    }));
+  }
+
+  
 
 // src/posts/posts.service.ts
 
