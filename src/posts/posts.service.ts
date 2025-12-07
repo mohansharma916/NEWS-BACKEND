@@ -57,13 +57,24 @@ export class PostsService {
     };
 
 
-    // Run count and find in parallel
+// Run count and find in parallel
     const [posts, total] = await this.prisma.$transaction([
       this.prisma.post.findMany({
-        where: whereClause as any, // Type cast if needed depending on Prisma version
-        include: { 
-          category: { select: { name: true, slug: true } }, 
-          author: { select: { fullName: true, avatarUrl: true } } 
+        where: whereClause as any,
+        // Switch from 'include' to 'select' to exclude 'content'
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          coverImage: true,
+          publishedAt: true,
+          category: { 
+            select: { name: true, slug: true } 
+          }, 
+          author: { 
+            select: { fullName: true, avatarUrl: true } 
+          } 
         },
         orderBy: { publishedAt: 'desc' },
         skip,
@@ -86,7 +97,23 @@ async findTrending() {
       where: { status: 'PUBLISHED' },
       orderBy: { views: 'desc' },
       take: 5,
-      include: { category: true }
+      // We use 'select' to pick ONLY what the UI needs. 
+      // Notice 'content' is missing.
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,     // Short summary is fine
+        coverImage: true,
+        publishedAt: true,
+        views: true,
+        category: {
+          select: { name: true, slug: true }
+        },
+        author: {
+          select: { fullName: true, avatarUrl: true }
+        }
+      }
     });
   }
 
