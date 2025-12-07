@@ -117,10 +117,22 @@ async findTrending() {
     });
   }
 
-  async findOneBySlug(slug: string) {
+async findOneBySlug(slug: string) {
     const post = await this.prisma.post.findUnique({
       where: { slug },
-      include: { category: true, author: true },
+      // explicit select ensures we get the content, but ONLY public author info
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        content: true, // <--- IMPORTANT: We explicitly keep this for the detailed view
+        coverImage: true,
+        publishedAt: true,
+        updatedAt: true,
+        category: { select: { name: true, slug: true } },
+        author: { select: { fullName: true, avatarUrl: true } } // <--- No emails/passwords sent
+      }
     });
     
     if (!post) throw new NotFoundException(`Post with slug ${slug} not found`);
@@ -151,12 +163,20 @@ async findTrending() {
     });
   }
 
-  async findAllForAdmin() {
+async findAllForAdmin() {
     return this.prisma.post.findMany({
-      orderBy: { updatedAt: 'desc' }, // Show recently edited first
-      include: { 
-        author: { select: { fullName: true } },
-        category: { select: { name: true } }
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true, // Assuming you have a status field
+        views: true,
+        publishedAt: true,
+        updatedAt: true,
+        // NO content here! Fast table loading.
+        category: { select: { name: true } },
+        author: { select: { fullName: true } }
       }
     });
   }
