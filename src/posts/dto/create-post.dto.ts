@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsEnum, IsUUID, IsUrl, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsUUID, IsUrl, MinLength, MaxLength, IsArray } from 'class-validator';
 import { PostStatus } from 'generated/prisma/enums';
 export class CreatePostDto {
   @IsString()
@@ -34,4 +34,10 @@ export class CreatePostDto {
   @IsBoolean()
   @IsOptional()
   isTrending?: boolean;
+
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // Validates that EVERY item inside the array is a string
+  tags?: string[];
 }

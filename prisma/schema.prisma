@@ -26,15 +26,19 @@ enum PostStatus {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  fullName  String?
-  avatarUrl String?
-  role      Role     @default(USER)
-  posts     Post[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  fullName      String?
+  avatarUrl     String?
+  bio           String?  @db.Text // Google needs this for authority
+  twitterHandle String?  // e.g. "@writer_john"
+  linkedinUrl   String?  // e.g. "linkedin.com/in/john"
+  websiteUrl    String?  // Personal blog link
+  role          Role     @default(USER)
+  posts         Post[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Category {
@@ -61,6 +65,8 @@ model Post {
   
   status      PostStatus @default(DRAFT)
   publishedAt DateTime?
+
+  tags        String[]
 
   authorId    String
   author      User       @relation(fields: [authorId], references: [id])
