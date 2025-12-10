@@ -111,7 +111,7 @@ async findTrending() {
           select: { name: true, slug: true }
         },
         author: {
-          select: { fullName: true, avatarUrl: true }
+          select: { id: true, fullName: true, avatarUrl: true }
         }
       }
     });
@@ -131,7 +131,7 @@ async findOneBySlug(slug: string) {
         publishedAt: true,
         updatedAt: true,
         category: { select: { name: true, slug: true } },
-        author: { select: { fullName: true, avatarUrl: true } } // <--- No emails/passwords sent
+        author: { select: { id: true, fullName: true, avatarUrl: true } } // <--- No emails/passwords sent
       }
     });
     
@@ -326,7 +326,7 @@ async findAllForAdmin() {
   
     return this.prisma.post.update({
       where: { id },
-      data: updatePostDto,
+      data: { ...updatePostDto },
     });
   }
   async remove(id: string) {
