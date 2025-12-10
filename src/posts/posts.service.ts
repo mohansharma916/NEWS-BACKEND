@@ -96,7 +96,7 @@ async findTrending() {
     return this.prisma.post.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: { views: 'desc' },
-      take: 5,
+      take: 10,
       // We use 'select' to pick ONLY what the UI needs. 
       // Notice 'content' is missing.
       select: {
