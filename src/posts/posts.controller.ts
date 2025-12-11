@@ -74,6 +74,7 @@ export class PostsController {
 async view(@Param('id') id: string, @Ip() ip: string, @Req() req: any) {
 
     const realIp = req.headers['x-forwarded-for'] || ip;
+    console.log("RealIp:", realIp);
     return this.postsService.incrementView(id,realIp.toString());
   }
 
