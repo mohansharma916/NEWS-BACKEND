@@ -21,7 +21,8 @@ export class PostsController {
 
   @Get('trending')
   async findTrending() {
-    return this.postsService.findTrending();
+    const findTrending = await this.postsService.findTrending();
+    return findTrending;
   }
 
   @Get('admin/stats') // <--- Moved UP
@@ -76,7 +77,7 @@ async view(@Param('id') id: string, @Ip() ip: string, @Req() req: any) {
     const forwarded = req.headers['x-forwarded-for'];
    let realIp = ip;
     if (forwarded) {
-      // "49.207..., 172.68..." -> ["49.207...", " 172.68..."] -> "49.207..."
+  
       const forwardedStr = Array.isArray(forwarded) ? forwarded[0] : forwarded;
       realIp = forwardedStr.split(',')[0].trim();
     }
