@@ -21,7 +21,8 @@ export class PostsController {
 
   @Get('trending')
   async findTrending() {
-    return this.postsService.findTrending();
+    const findTrending = await this.postsService.findTrending();
+    return findTrending;
   }
 
   @Get('admin/stats') // <--- Moved UP
