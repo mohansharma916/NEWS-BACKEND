@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsEnum, IsUUID, IsUrl, MinLength, MaxLength, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsUUID, IsUrl, MinLength, MaxLength, IsArray, IsISO8601 } from 'class-validator';
 import { PostStatus } from 'generated/prisma/enums';
 export class CreatePostDto {
   @IsString()
@@ -40,4 +40,9 @@ export class CreatePostDto {
   @IsArray()
   @IsString({ each: true }) // Validates that EVERY item inside the array is a string
   tags?: string[];
+
+ // Used for scheduling
+  @IsISO8601({ strict: true }, { message: 'publishedAt must be a valid ISO8601 date string' })
+  @IsOptional()
+  publishedAt?: string;
 }
