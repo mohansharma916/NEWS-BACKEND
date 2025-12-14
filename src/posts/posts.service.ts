@@ -22,17 +22,23 @@ export class PostsService {
 
  async create(createPostDto: CreatePostDto, authorId: string) {
     const slug = createPostDto.slug || this.generateSlug(createPostDto.title);
-    // or the frontend can send it.
-
-
-
+    
     const existingPost = await this.prisma.post.findUnique({ where: { slug } });
     if (existingPost) {
       throw new BadRequestException('Slug already exists. Please change the title slightly.');
     }
+    // START SCHEDULING LOGIC
+    let publishedAt = createPostDto.publishedAt ? new Date(createPostDto.publishedAt) : null;
+
+    // If status is explicitly PUBLISHED but no future date is provided, set publishedAt to now.
+    // If a date is provided, it's used (for scheduling, even if future).
+    if (createPostDto.status === 'PUBLISHED' && !publishedAt) {
+      publishedAt = new Date();
+    }
     return this.prisma.post.create({
       data: {
         ...createPostDto,
+        publishedAt,
         slug,
         authorId, // Force the relationship
       },
@@ -52,6 +58,7 @@ export class PostsService {
     // Build the query filter
     const whereClause = {
       status: 'PUBLISHED',
+      publishedAt: { lte: new Date() },
       ...(categorySlug && { category: { slug: { contains: categorySlug,
       mode: 'insensitive',} } }), // Optional filter
     };
@@ -94,7 +101,7 @@ export class PostsService {
 
 async findTrending() {
     return this.prisma.post.findMany({
-      where: { status: 'PUBLISHED' },
+      where: { status: 'PUBLISHED', publishedAt: { lte: new Date() } },
       orderBy: { views: 'desc' },
       take: 10,
       // We use 'select' to pick ONLY what the UI needs. 
@@ -129,6 +136,7 @@ async findOneBySlug(slug: string) {
         content: true, // <--- IMPORTANT: We explicitly keep this for the detailed view
         coverImage: true,
         publishedAt: true,
+        status: true,
         updatedAt: true,
         category: { select: { name: true, slug: true } },
         author: { select: { id: true, fullName: true, avatarUrl: true } } // <--- No emails/passwords sent
@@ -136,6 +144,11 @@ async findOneBySlug(slug: string) {
     });
     
     if (!post) throw new NotFoundException(`Post with slug ${slug} not found`);
+    // CRITICAL: Block public access to drafts and future scheduled posts
+    const isScheduled = post.publishedAt && new Date(post.publishedAt) > new Date();
+    if (post.status !== 'PUBLISHED' || isScheduled) {
+       throw new NotFoundException(`Post with slug ${slug} not found`);
+    }
     return post;
   }
 
@@ -144,6 +157,7 @@ async findOneBySlug(slug: string) {
     return this.prisma.post.findMany({
       where: { 
         status: 'PUBLISHED',
+        publishedAt: { lte: new Date() },
         category: { slug: categorySlug }
       },
       include: { category: true, author: true }
