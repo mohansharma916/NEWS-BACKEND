@@ -45,20 +45,18 @@ export class PostsService {
     });
   }
 
-// src/posts/posts.service.ts
 
   // Update this method signature
   async findAllPublished(page: number = 1, limit: number = 10, categorySlug?: string) {
     const skip = (page - 1) * limit;
 
-    console.log("Finding published posts:", { page, limit, categorySlug });
-
-
-
     // Build the query filter
     const whereClause = {
       status: 'PUBLISHED',
-      publishedAt: { lte: new Date() },
+     OR: [
+        { publishedAt: { lte: new Date() } },
+        { publishedAt: { equals: null } }
+      ],
       ...(categorySlug && { category: { slug: { contains: categorySlug,
       mode: 'insensitive',} } }), // Optional filter
     };
@@ -100,29 +98,36 @@ export class PostsService {
   }
 
 async findTrending() {
-    return this.prisma.post.findMany({
-      where: { status: 'PUBLISHED', publishedAt: { lte: new Date() } },
-      orderBy: { views: 'desc' },
-      take: 10,
-      // We use 'select' to pick ONLY what the UI needs. 
-      // Notice 'content' is missing.
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        excerpt: true,     // Short summary is fine
-        coverImage: true,
-        publishedAt: true,
-        views: true,
-        category: {
-          select: { name: true, slug: true }
-        },
-        author: {
-          select: { id: true, fullName: true, avatarUrl: true }
-        }
+  return await  this.prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      // Logic: Must be PUBLISHED AND (Date is in the past OR Date is null)
+      OR: [
+        { publishedAt: { lte: new Date() } },
+        { publishedAt: {equals: null } }
+      ]
+    },
+    orderBy: { views: 'desc' },
+    take: 10,
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      excerpt: true,
+      coverImage: true,
+      views: true,
+      // Select both dates so Frontend can fallback if publishedAt is null
+      publishedAt: true, 
+      createdAt: true,   // <--- Added this as a safety backup
+      category: {
+        select: { name: true, slug: true }
+      },
+      author: {
+        select: { id: true, fullName: true, avatarUrl: true }
       }
-    });
-  }
+    }
+  });
+}
 
 async findOneBySlug(slug: string) {
     const post = await this.prisma.post.findUnique({
