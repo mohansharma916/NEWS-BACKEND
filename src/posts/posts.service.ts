@@ -49,7 +49,6 @@ export class PostsService {
 
 async findRecommended(currentPostId: string, tags: string[]) {
   if (!tags || tags.length === 0) return [];
-
   return this.prisma.post.findMany({
     where: {
       status: 'PUBLISHED',
@@ -167,6 +166,7 @@ async findOneBySlug(slug: string) {
         coverImage: true,
         publishedAt: true,
         status: true,
+        tags: true,
         updatedAt: true,
         category: { select: { name: true, slug: true } },
         author: { select: { id: true, fullName: true, avatarUrl: true } } // <--- No emails/passwords sent
@@ -231,7 +231,7 @@ async findAllForAdmin() {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize to midnight (e.g., 2025-11-29 00:00:00)
 
-console.log("Incrementing view for Post ID:", id, "from IP:", ip);
+
     const geo = geoip.lookup(ip);
     console.log("GeoIP lookup result:", geo);
     const country = geo ? geo.country : 'Unknown';
