@@ -109,6 +109,21 @@ async view(@Param('id') id: string, @Ip() ip: string, @Req() req: any) {
     return this.postsService.create(createPostDto, userId);
   }
 
+
+
+
+
+  @Get(':id/recommended')
+async getRecommended(
+  @Param('id') id: string,
+  @Query('tags') tags: string // Expects comma-separated string: "tech,india,modi"
+) {
+  const tagArray = tags ? tags.split(',') : [];
+  return this.postsService.findRecommended(id, tagArray);
+}
+
+
+
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   async update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
