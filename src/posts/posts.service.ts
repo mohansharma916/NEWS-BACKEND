@@ -45,6 +45,31 @@ export class PostsService {
     });
   }
 
+  // src/posts/posts.service.ts
+
+async findRecommended(currentPostId: string, tags: string[]) {
+  if (!tags || tags.length === 0) return [];
+
+  return this.prisma.post.findMany({
+    where: {
+      status: 'PUBLISHED',
+      id: { not: currentPostId }, // Exclude the current post
+      tags: { hasSome: tags },    // Finds overlap: ['Tech'] matches ['Tech', 'News']
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      coverImage: true,
+      publishedAt: true,
+      excerpt: true,
+      category: { select: { name: true, slug: true } }
+    },
+    take: 3, // Show 3 recommendations
+    orderBy: { publishedAt: 'desc' }
+  });
+}
+
 
   // Update this method signature
   async findAllPublished(page: number = 1, limit: number = 10, categorySlug?: string) {
